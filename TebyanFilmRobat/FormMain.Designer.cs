@@ -63,8 +63,10 @@
 			// 
 			// textBoxLogs
 			// 
+			this.textBoxLogs.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
 			this.textBoxLogs.BackColor = System.Drawing.SystemColors.ControlLight;
-			this.textBoxLogs.Dock = System.Windows.Forms.DockStyle.Bottom;
 			this.textBoxLogs.Location = new System.Drawing.Point(0, 33);
 			this.textBoxLogs.Multiline = true;
 			this.textBoxLogs.Name = "textBoxLogs";

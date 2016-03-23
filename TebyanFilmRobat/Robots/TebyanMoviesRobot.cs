@@ -88,7 +88,8 @@ namespace TebyanFilmRobat.Robots
 		{
 			try
 			{
-				ZlpIOHelper.CreateDirectory(UploadedPaths.TempPath);
+				if (!ZlpIOHelper.DirectoryExists(UploadedPaths.TempPath))
+					ZlpIOHelper.CreateDirectory(UploadedPaths.TempPath);
 				List<TebyanMovieModel> contentsUrl = new List<TebyanMovieModel>();
 				logAction("By Mohammad Dayyan, 1395");
 				logAction(new string('~', 70));

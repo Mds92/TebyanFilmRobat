@@ -50,8 +50,6 @@ namespace TebyanFilmRobat
 			}
 		}
 
-		public int CategoryIdNumber { get; set; }
-
 		#endregion
 
 		#region Helpers
