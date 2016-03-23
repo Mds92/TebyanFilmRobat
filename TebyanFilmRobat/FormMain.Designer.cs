@@ -158,7 +158,7 @@
 			this.Controls.Add(this.label1);
 			this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
 			this.Name = "FormMain";
-			this.Text = "Tebyan Film Link Robots";
+			this.Text = "Tebyan Film Link Robot";
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
