@@ -138,6 +138,8 @@ namespace TebyanFilmRobat.Robots
 
 				int totalPage = getDownloadLinksTasks.Count();
 				logAction(string.Format("{0} محتوا یافت شد", totalPage));
+				logAction("لطفا تا اتمام کار صبر نمایید");
+				logAction(new string('/', 40));
 
 				int counter = 0;
 				foreach (Task<TebyanMovieModel> task in getDownloadLinksTasks)
@@ -157,6 +159,8 @@ namespace TebyanFilmRobat.Robots
 				else
 					logAction("هیچ لینک دانلودی یافت نشد");
 
+				logAction(new string('~', 70));
+				logAction(string.Format("اتمام کار {0}", MD.PersianDateTime.PersianDateTime.Now));
 				return contentsUrl;
 			}
 			catch (Exception ex)
