@@ -94,66 +94,131 @@ namespace TebyanFilmRobat.Robots
 				logAction("By Mohammad Dayyan, 1395");
 				logAction(new string('~', 70));
 
-				List<Task<KeyValuePair<int, string>>> getPageLinksTasks = new List<Task<KeyValuePair<int, string>>>();
-				List<Task<TebyanMovieModel>> getDownloadLinksTasks = new List<Task<TebyanMovieModel>>();
+				List<string> pageUrlsToGetDownloadLinks = new List<string>(); // آدرس صفحات برای پیدا کردن لینک های دانلود از داخل آنها
 
-				for (int i = startPage; i <= endPage; i++)
-					getPageLinksTasks.Add(GetPage(categoryId, i));
+				// سایت تبیان بیشتر از 25 ریکوئست همزمان جواب نمیده
+				// برای همین من اومدم 10 تا 10 تا ریکوئست ها رو میفرستم
+				const int concurrentRequests = 10;
 
-				foreach (Task<KeyValuePair<int, string>> task in getPageLinksTasks)
+				int startPageIndex = startPage <= 0 ? 0 : startPage - 1;
+				int endPageIndex = endPage <= 0 ? 0 : endPage - 1;
+
+				int tempStartPageIndex = startPageIndex;
+				int tempEndPageIndex = endPageIndex > concurrentRequests ? concurrentRequests : endPageIndex;
+
+				#region بدست آوردن لینک صفحات
+
+				while (true)
 				{
-					KeyValuePair<int, string> keyValuePair = task.GetAwaiter().GetResult();
-					int page = keyValuePair.Key;
-					string responseHtml = keyValuePair.Value;
-					logAction(string.Format("{0} بررسی صفحه", page));
+					List<Task<KeyValuePair<int, string>>> getPageLinksTasks = new List<Task<KeyValuePair<int, string>>>();
 
-					HtmlDocument htmlDocument = new HtmlDocument();
-					htmlDocument.LoadHtml(responseHtml);
+					for (int i = tempStartPageIndex; i <= tempEndPageIndex; i++)
+						getPageLinksTasks.Add(GetPage(categoryId, i));
 
-					var pageLinksHtmlNodes = htmlDocument.DocumentNode.Descendants("a")
-						.Where(
-							q =>
-								q.Attributes != null && q.Attributes["href"] != null && q.Attributes["class"] != null &&
-								q.Attributes["class"].Value.IndexOf("RedBullet", StringComparison.InvariantCultureIgnoreCase) > -1 &&
-								q.Attributes["href"].Value.StartsWith("/film", true, CultureInfo.InvariantCulture))
-						.ToList();
-
-					foreach (HtmlNode itemHtmlNode in pageLinksHtmlNodes)
+					foreach (Task<KeyValuePair<int, string>> task in getPageLinksTasks)
 					{
-						int linkCode = 0;
-						var relativePageLink = itemHtmlNode.Attributes["href"].Value;
-						var codeMatch = Regex.Match(relativePageLink, @"\d+$", RegexOptions.IgnoreCase);
-						if (codeMatch.Success)
-							int.TryParse(codeMatch.Value, out linkCode);
-						if (linkCode <= 0)
+						KeyValuePair<int, string> keyValuePair = task.GetAwaiter().GetResult();
+						int page = keyValuePair.Key;
+						string responseHtml = keyValuePair.Value;
+						logAction(string.Format("{0} بررسی صفحه", page + 1));
+
+						HtmlDocument htmlDocument = new HtmlDocument();
+						htmlDocument.LoadHtml(responseHtml);
+
+						var pageLinksHtmlNodes = htmlDocument.DocumentNode.Descendants("a")
+							.Where(
+								q =>
+									q.Attributes != null && q.Attributes["href"] != null && q.Attributes["class"] != null &&
+									q.Attributes["class"].Value.IndexOf("RedBullet", StringComparison.InvariantCultureIgnoreCase) > -1 &&
+									q.Attributes["href"].Value.StartsWith("/film", true, CultureInfo.InvariantCulture))
+							.ToList();
+
+						foreach (HtmlNode itemHtmlNode in pageLinksHtmlNodes)
 						{
-							logAction(string.Format("'{0}' فاقد کد صحیح است", relativePageLink));
-							continue;
+							int linkCode = 0;
+							var relativePageLink = itemHtmlNode.Attributes["href"].Value;
+							var codeMatch = Regex.Match(relativePageLink, @"\d+$", RegexOptions.IgnoreCase);
+							if (codeMatch.Success)
+								int.TryParse(codeMatch.Value, out linkCode);
+							if (linkCode <= 0)
+							{
+								logAction(string.Format("'{0}' فاقد کد صحیح است", relativePageLink));
+								continue;
+							}
+							string pageUrl = string.Format(TebyanFilmPageStringFormat, linkCode);
+							pageUrlsToGetDownloadLinks.Add(pageUrl);
 						}
+					}
 
-						string pageUrl = string.Format(TebyanFilmPageStringFormat, linkCode);
+					if (tempEndPageIndex >= endPageIndex) break;
 
-						getDownloadLinksTasks.Add(GetDownloadLink(pageUrl));
+					if (tempStartPageIndex < endPageIndex)
+					{
+						tempStartPageIndex = tempStartPageIndex + concurrentRequests + 1;
+						if (tempStartPageIndex > endPageIndex)
+							tempStartPageIndex = endPageIndex;
+					}
+					if (tempEndPageIndex < endPageIndex)
+					{
+						tempEndPageIndex = tempEndPageIndex + concurrentRequests + 1;
+						if (tempEndPageIndex > endPageIndex)
+							tempEndPageIndex = endPageIndex;
 					}
 				}
 
-				int totalPage = getDownloadLinksTasks.Count();
+				#endregion
+
+				#region بدست آوردن لینک دانلودها
+
+				int totalPage = pageUrlsToGetDownloadLinks.Count;
 				logAction(string.Format("{0} محتوا یافت شد", totalPage));
 				logAction("لطفا تا اتمام کار صبر نمایید");
 				logAction(new string('/', 40));
 
 				int counter = 0;
-				foreach (Task<TebyanMovieModel> task in getDownloadLinksTasks)
+				endPageIndex = endPage <= 0 ? 0 : totalPage - 1;
+				tempStartPageIndex = 0;
+				tempEndPageIndex = endPageIndex > concurrentRequests ? concurrentRequests : endPageIndex;
+
+				while (true)
 				{
-					counter++;
-					TebyanMovieModel tebyanMovieModel = task.GetAwaiter().GetResult();
-					if (tebyanMovieModel.IsSuccess)
-						logAction(string.Format("{0}/{1} دانلود شد", counter, totalPage));
-					else
-						logAction(string.Format("{0}/{1} خطا دارد", counter, totalPage));
-					logAction(new string('-', 40));
-					contentsUrl.Add(tebyanMovieModel);
+					List<Task<TebyanMovieModel>> getDownloadLinksTasks = new List<Task<TebyanMovieModel>>();
+
+					for (int i = tempStartPageIndex; i <= tempEndPageIndex; i++)
+					{
+						string pageUrl = pageUrlsToGetDownloadLinks[i];
+						getDownloadLinksTasks.Add(GetDownloadLink(pageUrl));
+					}
+
+					foreach (Task<TebyanMovieModel> task in getDownloadLinksTasks)
+					{
+						counter++;
+						TebyanMovieModel tebyanMovieModel = task.GetAwaiter().GetResult();
+						if (tebyanMovieModel.IsSuccess)
+							logAction(string.Format("{0}/{1} دانلود شد", counter, totalPage));
+						else
+							logAction(string.Format("{0}/{1} خطا دارد", counter, totalPage));
+						logAction(new string('-', 40));
+						contentsUrl.Add(tebyanMovieModel);
+					}
+
+					if (tempEndPageIndex >= endPageIndex) break;
+
+					if (tempStartPageIndex < endPageIndex)
+					{
+						tempStartPageIndex = tempStartPageIndex + concurrentRequests + 1;
+						if (tempStartPageIndex > endPageIndex)
+							tempStartPageIndex = endPageIndex;
+					}
+					if (tempEndPageIndex < endPageIndex)
+					{
+						tempEndPageIndex = tempEndPageIndex + concurrentRequests + 1;
+						if (tempEndPageIndex > endPageIndex)
+							tempEndPageIndex = endPageIndex;
+					}
 				}
+
+				#endregion
 
 				if (contentsUrl.Count > 0)
 					logAction(string.Format("{0} لینک دانلود جمع آوری شد", contentsUrl.Count));

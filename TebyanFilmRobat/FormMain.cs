@@ -171,7 +171,10 @@ namespace TebyanFilmRobat
 			}
 			if (RobotThread != null && RobotThread.ThreadState == ThreadState.Running)
 				RobotThread.Abort();
-			ZlpIOHelper.DeleteDirectory(UploadedPaths.TempPath, true);
+//#if !DEBUG
+			if (ZlpIOHelper.DirectoryExists(UploadedPaths.TempPath))
+				ZlpIOHelper.DeleteDirectory(UploadedPaths.TempPath, true);
+//#endif
 		}
 
 		#endregion
