@@ -160,7 +160,7 @@
 			this.Controls.Add(this.label1);
 			this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
 			this.Name = "FormMain";
-			this.Text = "Tebyan Film Link Robot";
+			this.Text = "ربات دانلود لینک ها از سایت تبیان";
 			this.ResumeLayout(false);
 			this.PerformLayout();
 

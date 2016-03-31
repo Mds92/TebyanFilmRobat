@@ -169,12 +169,11 @@ namespace TebyanFilmRobat
 				buttonStart.Enabled = true;
 				buttonStop.Enabled = false;
 			}
-			if (RobotThread != null && RobotThread.ThreadState == ThreadState.Running)
+			if (RobotThread != null && (RobotThread.ThreadState == ThreadState.Running || RobotThread.ThreadState == ThreadState.Background))
 				RobotThread.Abort();
-//#if !DEBUG
+			
 			if (ZlpIOHelper.DirectoryExists(UploadedPaths.TempPath))
 				ZlpIOHelper.DeleteDirectory(UploadedPaths.TempPath, true);
-//#endif
 		}
 
 		#endregion
