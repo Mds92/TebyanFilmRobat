@@ -96,7 +96,7 @@ namespace TebyanFilmRobat
 		{
 			buttonStart.Enabled = false;
 			buttonStop.Enabled = true;
-			if (RobotThread != null && RobotThread.ThreadState != ThreadState.Stopped) return;
+			if (RobotThread != null) return;
 			ThreadStart threadStart = () =>
 			{
 				try
@@ -169,11 +169,21 @@ namespace TebyanFilmRobat
 				buttonStart.Enabled = true;
 				buttonStop.Enabled = false;
 			}
-			if (RobotThread != null && (RobotThread.ThreadState == ThreadState.Running || RobotThread.ThreadState == ThreadState.Background))
+
+			try
+			{
 				RobotThread.Abort();
-			
-			if (ZlpIOHelper.DirectoryExists(UploadedPaths.TempPath))
-				ZlpIOHelper.DeleteDirectory(UploadedPaths.TempPath, true);
+			}
+			catch
+			{
+			}
+			RobotThread = null;
+			try
+			{
+				if (ZlpIOHelper.DirectoryExists(UploadedPaths.TempPath))
+					ZlpIOHelper.DeleteDirectory(UploadedPaths.TempPath, true);
+			}
+			catch { }
 		}
 
 		#endregion
